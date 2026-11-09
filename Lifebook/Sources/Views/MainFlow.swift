@@ -59,9 +59,8 @@ struct MainFlow: View {
     }
 
     private var mainMenu: some View {
-        let family = store.family!
-        return VStack(alignment: .leading, spacing: 0) {
-            Text("\(family.kidName.uppercased()) · CARE TEAM")
+        VStack(alignment: .leading, spacing: 0) {
+            Text("\((store.family?.kidName ?? "").uppercased()) · CARE TEAM")
                 .font(.system(size: 11.5, weight: .bold)).tracking(1.5).foregroundStyle(Pearl.muted(0.48))
                 .padding(.horizontal, 10).padding(.vertical, 8)
             MenuRow(label: "Today", dot: Pearl.green) { go(store.myOpenShift != nil ? .log : .day) }
@@ -93,7 +92,8 @@ struct MainFlow: View {
                 if let url = store.makeFile() { Share.present([url]) }
             }
             MenuRow(label: "Switch person") {
-                withAnimation { profile = false }
+                profile = false
+                menu = false
                 store.setMe(nil)
             }
         }

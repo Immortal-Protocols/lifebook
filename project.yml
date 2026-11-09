@@ -6,6 +6,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: 3UGCLFLDJ6
 targets:
   Lifebook:
     type: application
@@ -23,12 +24,14 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     scheme:
       testTargets:
         - LifebookTests
+        - LifebookUITests
   LifebookTests:
     type: bundle.unit-test
     platform: iOS
@@ -39,3 +42,14 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: app.lifebook.LifebookTests
+  LifebookUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [LifebookUITests]
+    dependencies:
+      - target: Lifebook
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.lifebook.LifebookUITests
+        TEST_TARGET_NAME: Lifebook

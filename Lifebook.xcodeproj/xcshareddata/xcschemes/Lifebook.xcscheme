@@ -50,6 +50,17 @@
                ReferencedContainer = "container:Lifebook.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E3E824B3E4E4053F3B4C806E"
+               BuildableName = "LifebookUITests.xctest"
+               BlueprintName = "LifebookUITests"
+               ReferencedContainer = "container:Lifebook.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

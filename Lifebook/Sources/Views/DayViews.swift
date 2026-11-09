@@ -6,13 +6,17 @@ struct DayView: View {
     @Environment(Store.self) private var store
 
     var body: some View {
-        let family = store.family!
-        let me = store.me!
+        if let family = store.family, let me = store.me {
+            content(family: family, me: me)
+        }
+    }
+
+    private func content(family: Family, me: Member) -> some View {
         let day = store.today
         let flags = Rules.flags(day: day, family: family)
         let gate = store.gate ?? .ready
 
-        ScreenScaffold {
+        return ScreenScaffold {
             Eyebrow(text: "\(family.kidName) · \(Fmt.weekday(store.now()))")
             Headline(text: headline(flags.count)).padding(.top, 10).padding(.bottom, 8)
             if let line = whatsNext(day: day, me: me, family: family, gate: gate) {
@@ -56,16 +60,15 @@ struct DayView: View {
 
     private func whatsNext(day: Day?, me: Member, family: Family, gate: Gate) -> String? {
         if case .resume = gate, let open = store.myOpenShift {
-            return "You're on until \(Fmt.time(open.plannedEnd)), then \(family.member(open.handoffTo)?.firstName ?? "the next person")."
+            return "You're on until \(Fmt.time(open.plannedEnd))."
         }
         guard let last = day?.sortedShifts.last(where: { !$0.isOpen }) else {
             return me.isParent ? "You're first today. Start when you're with \(family.kidName)." : nil
         }
         let from = family.member(last.caregiverId)?.firstName ?? "Someone"
         let closed = last.closedAt.map(Fmt.time) ?? ""
-        if last.handoffTo == me.id { return "\(from) handed off to you at \(closed)." }
-        if last.caregiverId == me.id { return "You handed off to \(family.member(last.handoffTo)?.firstName ?? "someone") at \(closed)." }
-        return "Last handoff: \(from) → \(family.member(last.handoffTo)?.firstName ?? "?") at \(closed)."
+        if last.caregiverId == me.id { return "You handed off at \(closed)." }
+        return "\(from) handed off at \(closed). Their notes are below."
     }
 }
 
@@ -137,11 +140,9 @@ struct SessionSetupView: View {
     let withoutHandoffFrom: UUID?
 
     @State private var hours = 4
-    @State private var target: UUID?
 
     var body: some View {
-        let family = store.family!
-        let me = store.me!
+        let family = store.family
         let start = editing ? (store.myOpenShift?.start ?? store.now()) : store.now()
         let end = start.addingTimeInterval(TimeInterval(hours * 3600))
 
@@ -166,31 +167,20 @@ struct SessionSetupView: View {
                 }
             }
 
-            SectionLabel(text: "Handing off to").padding(.top, 26).padding(.bottom, 12)
-            VStack(spacing: 9) {
-                ForEach(family.members.filter { $0.id != me.id }) { p in
-                    PersonRow(member: p, on: target == p.id) { target = p.id }
-                }
-            }
             if withoutHandoffFrom != nil {
-                Text("You're starting without \(family.member(withoutHandoffFrom)?.firstName ?? "the previous caregiver")'s notes. That's noted in today's log.")
+                Text("You're starting without \(family?.member(withoutHandoffFrom)?.firstName ?? "the previous caregiver")'s notes. That's noted in today's log.")
                     .font(.system(size: 15.5)).foregroundStyle(Pearl.crimson).padding(.top, 16)
             }
         } bottom: {
-            BigButton(title: target == nil ? "Pick who follows you" : (editing ? "Save · until \(Fmt.time(end))" : "Start · until \(Fmt.time(end))"),
-                      enabled: target != nil) {
-                guard let target else { return }
+            BigButton(title: editing ? "Save · until \(Fmt.time(end))" : "Start · until \(Fmt.time(end))", arrow: !editing) {
                 Reminders.requestPermission()
-                if editing { store.editSession(hours: hours, handoffTo: target) }
-                else { store.startSession(hours: hours, handoffTo: target, withoutHandoffFrom: withoutHandoffFrom) }
+                if editing { store.editSession(hours: hours) }
+                else { store.startSession(hours: hours, withoutHandoffFrom: withoutHandoffFrom) }
             }
         }
         .onAppear {
             if editing, let open = store.myOpenShift {
                 hours = max(1, Int((open.plannedEnd.timeIntervalSince(open.start) / 3600).rounded()))
-                target = open.handoffTo
-            } else {
-                target = Rules.defaultTarget(me: me, family: family)
             }
         }
     }
@@ -204,21 +194,23 @@ struct BlockedView: View {
     @State private var confirmSkip = false
 
     var body: some View {
-        let family = store.family!
+        if let family = store.family { content(family: family) }
+    }
+
+    private func content(family: Family) -> some View {
         let gate = store.gate ?? .ready
         let (waitId, kind): (UUID?, WaitKind) = {
             if case let .waitingOn(id, k) = gate { return (id, k) }
-            return (nil, .notesFrom)
+            return (nil, .openSession)
         }()
         let who = family.member(waitId)
         let name = who?.firstName ?? "The previous caregiver"
-        let last = store.today?.sortedShifts.last
         let nudges = (store.today?.nudges ?? []).filter { $0.to == waitId }.sorted { $0.at < $1.at }
 
-        ScreenScaffold {
+        return ScreenScaffold {
             Eyebrow(text: "Can't start yet", color: Pearl.crimson)
             Headline(text: headline(kind, name), size: 36).padding(.top, 10).padding(.bottom, 12)
-            Lede(text: explanation(kind, name, last: last, family: family), size: 18.5, opacity: 0.7)
+            Lede(text: explanation(kind, name, family: family), size: 18.5, opacity: 0.7)
 
             if !nudges.isEmpty {
                 NoteCard {
@@ -274,22 +266,17 @@ struct BlockedView: View {
 
     private func headline(_ kind: WaitKind, _ name: String) -> String {
         switch kind {
-        case .notesFrom: return "\(name) hasn't handed off yet."
         case .openSession: return "\(name) hasn't finished their notes."
         case .dayStart: return "\(name) hasn't started the day."
         }
     }
 
-    private func explanation(_ kind: WaitKind, _ name: String, last: Shift?, family: Family) -> String {
+    private func explanation(_ kind: WaitKind, _ name: String, family: Family) -> String {
         switch kind {
-        case .notesFrom:
-            let at = last?.closedAt.map { " at \(Fmt.time($0))" } ?? ""
-            let from = family.member(last?.caregiverId)?.firstName ?? "The last caregiver"
-            return "\(from) handed off to \(name)\(at). \(name)'s notes haven't reached this phone, so you'd be starting blind. The day is paused here."
         case .openSession:
             return "\(name)'s session is still open. You'd be starting blind, so the day is paused here."
         case .dayStart:
-            return "Parents start each day. Once \(name) hands off, their notes come to you by AirDrop or text."
+            return "No notes from today have reached this phone yet. Parents start each day; once \(name) or whoever's on hands off, their notes come to you by AirDrop or text."
         }
     }
 }

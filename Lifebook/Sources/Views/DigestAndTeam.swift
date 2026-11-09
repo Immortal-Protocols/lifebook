@@ -7,7 +7,10 @@ struct DigestView: View {
     let dayKey: String
 
     var body: some View {
-        let family = store.family!
+        if let family = store.family { content(family: family) }
+    }
+
+    private func content(family: Family) -> some View {
         let day = store.state.days[dayKey]
         let flags = Rules.flags(day: day, family: family)
         let shifts = day?.sortedShifts ?? []
@@ -16,7 +19,7 @@ struct DigestView: View {
         let weekday = Fmt.weekday(date)
         let skipped = shifts.filter { $0.startedWithoutHandoffFrom != nil }
 
-        ScreenScaffold {
+        return ScreenScaffold {
             if store.pastDayKeys.count > 1 {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -98,24 +101,24 @@ struct DigestView: View {
 
 struct TeamView: View {
     @Environment(Store.self) private var store
-    @State private var adding: [Member] = []
     @State private var sent = false
 
     var body: some View {
-        let family = store.family!
-        let me = store.me!
+        if let family = store.family, let me = store.me { content(family: family, me: me) }
+    }
 
+    private func content(family: Family, me: Member) -> some View {
         ScreenScaffold {
             Eyebrow(text: "\(family.kidName) · care team")
-            Headline(text: me.isParent ? "Invite the care team." : "The care team.", size: 36).padding(.top, 12).padding(.bottom, 10)
-            Lede(text: "AirDrop this file to each person, or text it in a pinch. Opening it sets up Lifebook on their phone — no accounts.", size: 17.5)
+            Headline(text: me.isParent ? "Send it to whoever's on." : "The care team.", size: 36).padding(.top, 12).padding(.bottom, 10)
+            Lede(text: "AirDrop this file to anyone taking a shift, or text it in a pinch. They open it, type their name, and they're in — no accounts, no list to keep.", size: 17.5)
                 .padding(.bottom, 22)
 
             HStack(spacing: 14) {
                 Image(systemName: "doc.richtext").font(.system(size: 26, weight: .light)).foregroundStyle(Pearl.ink.opacity(0.7))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(family.kidName).lifebook").font(.system(size: 17, weight: .bold))
-                    Text("\(family.members.count) people · \(family.points.joined(separator: ", "))")
+                    Text(family.points.joined(separator: ", "))
                         .font(.system(size: 14.5)).foregroundStyle(Pearl.muted())
                 }
                 Spacer()
@@ -128,7 +131,9 @@ struct TeamView: View {
             }
             .padding(.top, 12)
 
-            SectionLabel(text: "On the team").padding(.top, 26).padding(.bottom, 10)
+            SectionLabel(text: "Who's joined").padding(.top, 26).padding(.bottom, 4)
+            Text("People show up here once their notes reach this phone.")
+                .font(.system(size: 15)).foregroundStyle(Pearl.muted(0.55)).padding(.bottom, 10)
             VStack(spacing: 9) {
                 ForEach(family.members) { m in
                     HStack(spacing: 13) {
@@ -141,25 +146,10 @@ struct TeamView: View {
                             Text(m.role).font(.system(size: 14)).foregroundStyle(Pearl.muted())
                         }
                         Spacer()
-                        if me.isParent && m.id != me.id {
-                            Button { store.removeMember(m.id) } label: {
-                                Image(systemName: "xmark").font(.system(size: 13, weight: .bold)).foregroundStyle(Pearl.muted(0.45))
-                                    .frame(width: 32, height: 32)
-                            }
-                            .accessibilityLabel("Remove \(m.name)")
-                        }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 12)
                     .glass(19)
                 }
-            }
-            if me.isParent {
-                MemberEditor(members: $adding)
-                    .padding(.top, 9)
-                    .onChange(of: adding) { _, new in
-                        for m in new { store.addMember(m) }
-                        if !new.isEmpty { adding = [] }
-                    }
             }
 
             SectionLabel(text: "Tracking for \(family.kidName)").padding(.top, 26).padding(.bottom, 10)
@@ -181,11 +171,14 @@ struct PointsView: View {
     @State private var picked: [String] = []
 
     var body: some View {
-        let family = store.family!
+        if let family = store.family { content(family: family) }
+    }
+
+    private func content(family: Family) -> some View {
         let isParent = store.me?.isParent ?? false
         let changed = picked != family.points
 
-        ScreenScaffold {
+        return ScreenScaffold {
             Eyebrow(text: "\(family.kidName) · tracking")
             Headline(text: "What we track", size: 34).padding(.top, 10).padding(.bottom, 8)
             Lede(text: isParent

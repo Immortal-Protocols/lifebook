@@ -93,8 +93,8 @@ final class Store {
 
     // MARK: Setup
 
-    func createFamily(kidName: String, points: [String], me: Member, others: [Member]) {
-        let fam = Family(kidName: kidName, points: Array(points.prefix(Catalog.maxPoints)), members: [me] + others)
+    func createFamily(kidName: String, points: [String], me: Member) {
+        let fam = Family(kidName: kidName, points: Array(points.prefix(Catalog.maxPoints)), members: [me])
         mutate {
             $0 = LocalState(family: fam, days: [:], meId: me.id, sentShiftIds: [])
         }
@@ -113,19 +113,22 @@ final class Store {
         }
     }
 
-    func addMember(_ m: Member) {
+    /// This phone's person. Reuses an existing team member with the same name (e.g. after a
+    /// reinstall); otherwise adds them. Others learn about them from their next handoff file.
+    func join(name: String, isParent: Bool) {
+        guard let family else { return }
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return }
+        if let existing = family.members.first(where: { $0.name.caseInsensitiveCompare(clean) == .orderedSame }) {
+            setMe(existing.id)
+            return
+        }
+        let m = Member(name: clean, role: isParent ? "Parent" : "Caregiver", isParent: isParent)
         mutate {
             $0.family?.members.append(m)
-            $0.family?.updatedAt = now()
+            $0.meId = m.id
         }
-    }
-
-    func removeMember(_ id: UUID) {
-        guard id != state.meId else { return }
-        mutate {
-            $0.family?.members.removeAll { $0.id == id }
-            $0.family?.updatedAt = now()
-        }
+        route = .day
     }
 
     func reset() {
@@ -146,14 +149,13 @@ final class Store {
     }
 
     @discardableResult
-    func startSession(hours: Int, handoffTo: UUID, withoutHandoffFrom: UUID? = nil) -> Shift? {
+    func startSession(hours: Int, withoutHandoffFrom: UUID? = nil) -> Shift? {
         guard let me else { return nil }
         let start = now()
         let shift = Shift(
             caregiverId: me.id,
             start: start,
             plannedEnd: start.addingTimeInterval(TimeInterval(hours * 3600)),
-            handoffTo: handoffTo,
             startedWithoutHandoffFrom: withoutHandoffFrom,
             updatedAt: start
         )
@@ -163,11 +165,10 @@ final class Store {
         return shift
     }
 
-    func editSession(hours: Int, handoffTo: UUID) {
+    func editSession(hours: Int) {
         guard let open = myOpenShift else { return }
         updateShift(open.id) {
             $0.plannedEnd = $0.start.addingTimeInterval(TimeInterval(hours * 3600))
-            $0.handoffTo = handoffTo
         }
         if let s = shift(open.id) { scheduleReminders(for: s) }
         route = .log
@@ -207,12 +208,9 @@ final class Store {
     }
 
     /// Close the session. The caller then shares the file.
-    func closeSession(handoffTo: UUID) -> UUID? {
+    func closeSession() -> UUID? {
         guard let open = myOpenShift, let family, open.isComplete(points: family.points) else { return nil }
-        updateShift(open.id) {
-            $0.closedAt = now()
-            $0.handoffTo = handoffTo
-        }
+        updateShift(open.id) { $0.closedAt = now() }
         if let closed = shift(open.id) { scheduleReminders(for: closed) }
         route = .handoffDone(shiftId: open.id)
         return open.id
@@ -230,8 +228,7 @@ final class Store {
 
     private func scheduleReminders(for shift: Shift) {
         guard let family, !state.sentShiftIds.contains(shift.id) else { return }
-        let target = family.member(shift.handoffTo)?.firstName ?? "the next caregiver"
-        Reminders.schedule(for: shift, kidName: family.kidName, targetName: target, now: now())
+        Reminders.schedule(for: shift, kidName: family.kidName, now: now())
     }
 
     // MARK: Exchange
@@ -320,9 +317,9 @@ final class Store {
         let cal = Calendar.current
         let base = cal.startOfDay(for: now())
         func at(_ h: Int, _ m: Int) -> Date { base.addingTimeInterval(TimeInterval(h * 3600 + m * 60)) }
-        let s1 = Shift(caregiverId: priya.id, start: at(6, 0), plannedEnd: at(8, 0), handoffTo: ana.id, closedAt: at(8, 10),
+        let s1 = Shift(caregiverId: priya.id, start: at(6, 0), plannedEnd: at(8, 0), closedAt: at(8, 10),
                        entries: ["Meds": Entry(mark: .ok, at: at(7, 0)), "BM": Entry(mark: .ok, at: at(7, 30)), "Nap": Entry(mark: .ok, at: at(8, 0))])
-        let s2 = Shift(caregiverId: ana.id, start: at(8, 10), plannedEnd: at(14, 30), handoffTo: deb.id, closedAt: at(14, 35),
+        let s2 = Shift(caregiverId: ana.id, start: at(8, 10), plannedEnd: at(14, 30), closedAt: at(14, 35),
                        entries: ["Meds": Entry(mark: .ok, at: at(12, 0)),
                                  "BM": Entry(mark: .concern, note: "Only once since 8am and she seemed uncomfortable around noon. Gave extra water. Worth watching this afternoon.", at: at(12, 24)),
                                  "Nap": Entry(mark: .ok, at: at(13, 30))])

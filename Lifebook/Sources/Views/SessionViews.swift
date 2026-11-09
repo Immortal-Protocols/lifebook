@@ -4,8 +4,7 @@ import SwiftUI
 
 struct LogView: View {
     @Environment(Store.self) private var store
-    @State private var sheet = false
-    @State private var target: UUID?
+    @State private var confirmClose = false
 
     var body: some View {
         if let shift = store.myOpenShift, let family = store.family {
@@ -21,7 +20,6 @@ struct LogView: View {
         let complete = shift.isComplete(points: points)
         let missing = points.filter { shift.entries[$0] == nil }
         let needNote = points.filter { shift.entries[$0]?.mark == .concern && (shift.entries[$0]?.note.trimmed.count ?? 0) <= 3 }
-        let targetName = family.member(shift.handoffTo)?.firstName ?? "—"
         let hours = Int((shift.plannedEnd.timeIntervalSince(shift.start) / 3600).rounded())
 
         return ScreenScaffold(topPadding: 80) {
@@ -31,7 +29,7 @@ struct LogView: View {
                 Text("SINCE \(Fmt.time(shift.start))").font(.system(size: 12.5, weight: .bold)).tracking(1.5).foregroundStyle(Pearl.muted(0.6))
             }
             HStack(spacing: 8) {
-                Text("\(hours)h · ends \(Fmt.time(shift.plannedEnd)) · to \(targetName)")
+                Text("\(hours)h · ends \(Fmt.time(shift.plannedEnd))")
                 Button("Change") { store.route = .editSession }
                     .foregroundStyle(Pearl.ink).underline()
             }
@@ -44,13 +42,12 @@ struct LogView: View {
             }
         } bottom: {
             VStack(spacing: 14) {
-                Text(hint(complete: complete, target: targetName, needNote: needNote, missing: missing))
+                Text(hint(complete: complete, needNote: needNote, missing: missing))
                     .font(.system(size: 17)).foregroundStyle(Pearl.muted(0.6))
                     .multilineTextAlignment(.center)
                 Button {
                     guard complete else { return }
-                    target = shift.handoffTo
-                    sheet = true
+                    confirmClose = true
                 } label: {
                     Text("Hand off · \(logged) of \(points.count)")
                         .font(.display(21)).tracking(-0.5)
@@ -70,15 +67,13 @@ struct LogView: View {
                 .buttonStyle(PressStyle())
             }
         }
-        .sheet(isPresented: $sheet) {
-            HandoffSheet(target: $target) {
-                sheet = false
-                guard let target, let id = store.closeSession(handoffTo: target) else { return }
+        .confirmationDialog("Close your shift?", isPresented: $confirmClose, titleVisibility: .visible) {
+            Button("Close & send my notes") {
+                guard let id = store.closeSession() else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { sendHandoff(id) }
             }
-            .presentationDetents([.large])
-            .presentationCornerRadius(34)
-            .presentationBackground(.thinMaterial)
+        } message: {
+            Text("Next, AirDrop the file to whoever's taking over — or text it if they're not nearby.")
         }
     }
 
@@ -87,8 +82,8 @@ struct LogView: View {
         Share.present([url]) { sent in if sent { store.markSent(id) } }
     }
 
-    private func hint(complete: Bool, target: String, needNote: [String], missing: [String]) -> String {
-        if complete { return "\(target) gets your notes when you send them" }
+    private func hint(complete: Bool, needNote: [String], missing: [String]) -> String {
+        if complete { return "Close out, then AirDrop or text your notes" }
         if !needNote.isEmpty { return "Write what you saw for \(needNote.joined(separator: ", "))" }
         return "Log \(missing.map { $0.lowercased() }.joined(separator: ", ")) to continue"
     }
@@ -159,32 +154,6 @@ struct PointRow: View {
     }
 }
 
-struct HandoffSheet: View {
-    @Environment(Store.self) private var store
-    @Binding var target: UUID?
-    let confirm: () -> Void
-
-    var body: some View {
-        let family = store.family!
-        let me = store.me!
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Who's taking over?").font(.display(28)).tracking(-0.8).padding(.top, 28).padding(.bottom, 4)
-                Text("Next you'll AirDrop them your notes — or text the file if they're not nearby.")
-                    .font(.system(size: 16)).foregroundStyle(Pearl.muted(0.58)).padding(.bottom, 16)
-                VStack(spacing: 9) {
-                    ForEach(family.members.filter { $0.id != me.id }) { p in
-                        PersonRow(member: p, on: target == p.id) { target = p.id }
-                    }
-                }
-                BigButton(title: "Hand off to \(family.member(target)?.firstName ?? "…")", enabled: target != nil, action: confirm)
-                    .padding(.top, 16)
-            }
-            .padding(.horizontal, 20).padding(.bottom, 30)
-        }
-    }
-}
-
 // MARK: - Handoff done
 
 struct HandoffDoneView: View {
@@ -193,9 +162,8 @@ struct HandoffDoneView: View {
     @State private var pop = false
 
     var body: some View {
-        let family = store.family!
+        let points = store.family?.points ?? []
         let shift = store.shift(shiftId)
-        let next = family.member(shift?.handoffTo)?.firstName ?? "They"
         let sent = store.wasSent(shiftId)
 
         ScreenScaffold(topPadding: 170) {
@@ -211,9 +179,9 @@ struct HandoffDoneView: View {
             .scaleEffect(pop ? 1 : 0.5)
             .padding(.bottom, 30)
 
-            Headline(text: "Shift closed.\n\(next) has it.", size: 38)
+            Headline(text: sent ? "Shift closed.\nNotes sent." : "Shift closed.\nNow send your notes.", size: 38)
             if let shift {
-                Lede(text: family.points.map { "\($0) \(shift.entries[$0]?.mark == .concern ? "flagged" : "normal")" }.joined(separator: " · ") + ".",
+                Lede(text: points.map { "\($0) \(shift.entries[$0]?.mark == .concern ? "flagged" : "normal")" }.joined(separator: " · ") + ".",
                      size: 19, opacity: 0.65)
                     .padding(.top, 14)
             }
@@ -227,12 +195,12 @@ struct HandoffDoneView: View {
                 NoteCard {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("NOT SENT YET").font(.system(size: 12.5, weight: .bold)).tracking(1.2).foregroundStyle(Pearl.crimson)
-                        Text("\(next) can't start until your notes reach their phone. We'll keep reminding you.")
+                        Text("The next caregiver can't start until your notes reach their phone. We'll keep reminding you.")
                             .font(.system(size: 17)).lineSpacing(4).foregroundStyle(Pearl.body)
                     }
                 }
                 .padding(.top, 24)
-                OutlineButton(title: "Send to \(next)", weight: .bold) { send() }.padding(.top, 12)
+                OutlineButton(title: "AirDrop or text my notes", weight: .bold) { send() }.padding(.top, 12)
             }
         } bottom: {
             BigButton(title: "See the day") { store.route = .digest(dayKey: store.todayKey) }

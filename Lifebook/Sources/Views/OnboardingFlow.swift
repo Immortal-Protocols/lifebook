@@ -9,7 +9,6 @@ struct OnboardingFlow: View {
     @State private var picked: [String] = []
     @State private var myName = ""
     @State private var myRole = "Mom"
-    @State private var others: [Member] = []
     @State private var importing = false
 
     var body: some View {
@@ -35,7 +34,7 @@ struct OnboardingFlow: View {
             NoteCard {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("CAREGIVER?").font(.system(size: 12.5, weight: .bold)).tracking(1.2).foregroundStyle(Pearl.crimson)
-                    Text("Open the Lifebook file a parent AirDropped or texted you. It sets everything up.")
+                    Text("Open the Lifebook file someone AirDropped or texted you, then type your name. That's it.")
                         .font(.system(size: 17)).lineSpacing(4).foregroundStyle(Pearl.body)
                 }
             }
@@ -84,11 +83,10 @@ struct OnboardingFlow: View {
         ScreenScaffold(topPadding: 96) {
             BackLink { step = .points }
             Eyebrow(text: "Setup · 3 of 3")
-            Headline(text: "Who's on the care team?", size: 34).padding(.top, 10).padding(.bottom, 8)
-            Lede(text: "Everyone who takes a shift with \(kid.trimmed). You'll send them the Lifebook file next.", size: 17)
+            Headline(text: "And you are?", size: 34).padding(.top, 10).padding(.bottom, 8)
+            Lede(text: "No need to list the care team. Send the Lifebook file to whoever's on and they join when they open it.", size: 17)
                 .padding(.bottom, 22)
 
-            SectionLabel(text: "You").padding(.bottom, 10)
             TextFieldGlass(placeholder: "Your first name", text: $myName, size: 18)
                 .textInputAutocapitalization(.words)
             HStack(spacing: 8) {
@@ -103,13 +101,10 @@ struct OnboardingFlow: View {
                 }
             }
             .padding(.top, 10)
-
-            SectionLabel(text: "Caregivers & co-parents").padding(.top, 26).padding(.bottom, 10)
-            MemberEditor(members: $others)
         } bottom: {
             BigButton(title: "Next", enabled: !myName.trimmed.isEmpty, arrow: true) {
                 let me = Member(name: myName.trimmed, role: "\(myRole) · parent", isParent: true)
-                store.createFamily(kidName: kid.trimmed, points: picked, me: me, others: others)
+                store.createFamily(kidName: kid.trimmed, points: picked, me: me)
             }
         }
     }
@@ -160,70 +155,6 @@ struct PointPicker: View {
             Text("\(picked.count) of \(Catalog.maxPoints) chosen")
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(Pearl.muted(0.55))
                 .padding(.top, 5).padding(.leading, 2)
-        }
-    }
-}
-
-struct MemberEditor: View {
-    @Binding var members: [Member]
-    @State private var name = ""
-    @State private var role = ""
-    @State private var isParent = false
-
-    var body: some View {
-        VStack(spacing: 9) {
-            ForEach(members) { m in
-                HStack(spacing: 13) {
-                    Text(m.initials).font(.system(size: 14.5, weight: .bold)).foregroundStyle(Pearl.ink.opacity(0.6))
-                        .frame(width: 34, height: 34).background(Circle().fill(Pearl.ink.opacity(0.08)))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(m.name).font(.system(size: 17.5, weight: .semibold))
-                        Text(m.role).font(.system(size: 14)).foregroundStyle(Pearl.muted())
-                    }
-                    Spacer()
-                    Button { members.removeAll { $0.id == m.id } } label: {
-                        Image(systemName: "xmark").font(.system(size: 13, weight: .bold)).foregroundStyle(Pearl.muted(0.45))
-                            .frame(width: 32, height: 32)
-                    }
-                    .accessibilityLabel("Remove \(m.name)")
-                }
-                .padding(.horizontal, 16).padding(.vertical, 12)
-                .glass(19)
-            }
-
-            VStack(spacing: 0) {
-                TextField("Name", text: $name)
-                    .font(.system(size: 17.5, weight: .semibold))
-                    .textInputAutocapitalization(.words)
-                    .padding(.horizontal, 16).padding(.vertical, 14)
-                Divider().opacity(0.5).padding(.horizontal, 16)
-                TextField(isParent ? "e.g. Dad" : "e.g. Weekday caregiver", text: $role)
-                    .font(.system(size: 16))
-                    .padding(.horizontal, 16).padding(.vertical, 14)
-                Divider().opacity(0.5).padding(.horizontal, 16)
-                HStack {
-                    Toggle(isOn: $isParent) {
-                        Text("Parent").font(.system(size: 16, weight: .medium)).foregroundStyle(Pearl.ink.opacity(0.7))
-                    }
-                    .toggleStyle(.switch).tint(Pearl.green).fixedSize()
-                    Spacer()
-                    Button {
-                        let n = name.trimmed
-                        guard !n.isEmpty else { return }
-                        let r = role.trimmed.isEmpty ? (isParent ? "Parent" : "Caregiver") : role.trimmed
-                        members.append(Member(name: n, role: isParent ? "\(r) · parent" : r, isParent: isParent))
-                        name = ""; role = ""; isParent = false
-                    } label: {
-                        Text("Add").font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(name.trimmed.isEmpty ? Pearl.ink.opacity(0.3) : Pearl.ink)
-                            .padding(.horizontal, 18).padding(.vertical, 9)
-                            .glass(99, on: !name.trimmed.isEmpty)
-                    }
-                    .buttonStyle(PressStyle())
-                }
-                .padding(.horizontal, 16).padding(.vertical, 10)
-            }
-            .glass(19, on: false)
         }
     }
 }

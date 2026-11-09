@@ -26,13 +26,13 @@ struct LifebookApp: App {
             try? FileManager.default.removeItem(atPath: args[i + 1])
             try? FileManager.default.copyItem(at: url, to: URL(fileURLWithPath: args[i + 1]))
         }
-        if let i = args.firstIndex(of: "-route"), i + 1 < args.count, let me = store.me, let family = store.family {
-            let target = Rules.defaultTarget(me: me, family: family) ?? me.id
+        if let i = args.firstIndex(of: "-route"), i + 1 < args.count, store.me != nil, let family = store.family {
             switch args[i + 1] {
             case "blocked": store.route = .blocked
+            case "join": store.setMe(nil)
             case "setup": store.route = .sessionSetup(withoutHandoffFrom: nil)
             case "log", "logConcern", "logDone", "handoff":
-                if store.myOpenShift == nil { store.startSession(hours: 4, handoffTo: target) }
+                if store.myOpenShift == nil { store.startSession(hours: 4) }
                 if args[i + 1] != "log" {
                     store.setMark(family.points[0], .ok)
                     store.setMark(family.points[1], .concern)
@@ -41,7 +41,7 @@ struct LifebookApp: App {
                     store.setNote(family.points[1], "Still uncomfortable after dinner. Tried a warm bath; no BM yet.")
                     if family.points.count > 2 { store.setMark(family.points[2], .ok) }
                 }
-                if args[i + 1] == "handoff" { _ = store.closeSession(handoffTo: target) }
+                if args[i + 1] == "handoff" { _ = store.closeSession() }
             case "digest": store.route = .digest(dayKey: store.todayKey)
             case "team": store.route = .team
             case "points": store.route = .points

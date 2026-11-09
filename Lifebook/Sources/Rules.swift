@@ -9,11 +9,9 @@ enum Gate: Equatable {
 }
 
 enum WaitKind: Equatable {
-    /// The last handoff we know about went to someone else, and their notes haven't reached this phone.
-    case notesFrom
-    /// Someone's session is known to still be open.
+    /// Someone's session is known to still be open; their notes haven't reached this phone.
     case openSession
-    /// Nothing logged today yet. Parents are the day's first caregivers.
+    /// No notes from today have reached this phone yet. Parents start each day.
     case dayStart
 }
 
@@ -27,8 +25,9 @@ struct Flag: Hashable, Identifiable {
 }
 
 enum Rules {
-    /// Principle: it's the current caregiver's job to hand off. The next caregiver is blocked
-    /// until the previous session's notes arrive. Parents control the agenda and are never blocked.
+    /// Principle: it's the current caregiver's job to hand off. Handoffs are just files, so there's
+    /// no "who's next": a caregiver can start once today's latest notes are on their phone.
+    /// Parents control the agenda and are never blocked.
     static func gate(day: Day?, me: Member, family: Family) -> Gate {
         let shifts = day?.sortedShifts ?? []
         if let open = shifts.last(where: { $0.caregiverId == me.id && $0.isOpen }) {
@@ -41,9 +40,7 @@ enum Rules {
             return .ready
         }
         if last.isOpen { return .waitingOn(memberId: last.caregiverId, kind: .openSession) }
-        if last.caregiverId == me.id { return .ready }
-        guard let next = last.handoffTo, next != me.id else { return .ready }
-        return .waitingOn(memberId: next, kind: .notesFrom)
+        return .ready
     }
 
     static func flags(day: Day?, family: Family) -> [Flag] {
@@ -67,14 +64,6 @@ enum Rules {
         }
         return nil
     }
-
-    /// Who should this person hand off to by default?
-    static func defaultTarget(me: Member, family: Family, current: UUID? = nil) -> UUID? {
-        if let current, current != me.id, family.member(current) != nil { return current }
-        let others = family.members.filter { $0.id != me.id }
-        if !me.isParent, let parent = others.first(where: \.isParent) { return parent.id }
-        return others.first?.id
-    }
 }
 
 // MARK: - Merge
@@ -97,8 +86,14 @@ enum Merge {
         let joining = state.family == nil || state.family?.id != file.family.id
         if joining {
             state = LocalState(family: file.family, days: [:], meId: nil, sentShiftIds: [])
-        } else if let fam = state.family, file.family.updatedAt > fam.updatedAt {
-            state.family = file.family
+        } else if let fam = state.family {
+            // Kid name and points: newest wins. People: everyone either phone has seen.
+            var merged = file.family.updatedAt > fam.updatedAt ? file.family : fam
+            merged.members = fam.members
+            for m in file.family.members where !merged.members.contains(where: { $0.id == m.id }) {
+                merged.members.append(m)
+            }
+            state.family = merged
         }
 
         var added = 0, updated = 0
@@ -120,9 +115,6 @@ enum Merge {
             day.nudges += incoming.nudges.filter { !knownNudges.contains($0.id) }
             state.days[incoming.id] = day
         }
-
-        // If my identity no longer exists in the family, ask again.
-        if let me = state.meId, state.family?.member(me) == nil { state.meId = nil }
 
         return (state, joining ? .joined : .merged(newShifts: added, updatedShifts: updated))
     }

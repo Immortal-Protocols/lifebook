@@ -11,7 +11,7 @@ struct RootView: View {
             if store.family == nil {
                 OnboardingFlow()
             } else if store.me == nil {
-                WhoAreYouView()
+                JoinView()
             } else {
                 MainFlow()
             }
@@ -52,27 +52,49 @@ extension View {
 
 // MARK: - Who are you?
 
-struct WhoAreYouView: View {
+/// Shown after opening a Lifebook file for the first time (or after "Switch person").
+/// Just a name — no one has to have added you first.
+struct JoinView: View {
     @Environment(Store.self) private var store
-    @State private var picked: UUID?
+    @State private var name = ""
+    @State private var isParent = false
+    @FocusState private var focused: Bool
 
     var body: some View {
-        let family = store.family!
+        let family = store.family
+        let kid = family?.kidName ?? "the kid"
         ScreenScaffold(topPadding: 96) {
             BrandMark().padding(.bottom, 36)
-            Eyebrow(text: "\(family.kidName) · care team")
-            Headline(text: "Which one is you?", size: 38).padding(.top, 12).padding(.bottom, 12)
-            Lede(text: "This phone will log as you. Not on the list? Ask \(family.parents.first?.firstName ?? "a parent") to add you and send a fresh file.")
+            Eyebrow(text: "\(kid) · care team")
+            Headline(text: "What's your name?", size: 38).padding(.top, 12).padding(.bottom, 12)
+            Lede(text: "Your notes go out under this name. This phone logs as you from now on.")
                 .padding(.bottom, 24)
-            VStack(spacing: 9) {
-                ForEach(family.members) { m in
-                    PersonRow(member: m, on: picked == m.id) { picked = m.id }
+            TextFieldGlass(placeholder: "First name", text: $name)
+                .textInputAutocapitalization(.words)
+                .submitLabel(.done)
+                .focused($focused)
+                .onSubmit(join)
+                .accessibilityIdentifier("joinName")
+            Toggle(isOn: $isParent) {
+                Text("I'm \(kid)'s parent").font(.system(size: 17, weight: .medium)).foregroundStyle(Pearl.ink.opacity(0.75))
+            }
+            .tint(Pearl.green)
+            .padding(.horizontal, 6).padding(.top, 16)
+
+            if let members = family?.members, !members.isEmpty {
+                SectionLabel(text: "Already on the team? Tap your name").padding(.top, 30).padding(.bottom, 10)
+                VStack(spacing: 9) {
+                    ForEach(members) { m in
+                        PersonRow(member: m, on: false) { store.setMe(m.id) }
+                    }
                 }
             }
         } bottom: {
-            BigButton(title: "That's me", enabled: picked != nil, arrow: true) { store.setMe(picked) }
+            BigButton(title: name.trimmed.isEmpty ? "Type your name" : "I'm \(name.trimmed)", enabled: !name.trimmed.isEmpty, arrow: true, action: join)
         }
     }
+
+    private func join() { store.join(name: name, isParent: isParent) }
 }
 
 struct BrandMark: View {

@@ -146,7 +146,7 @@ struct BigButton: View {
     var sheen: Bool = false
     let action: () -> Void
 
-    @State private var sheenX: CGFloat = -1.3
+    @State private var sheenX: CGFloat = -0.4
 
     var body: some View {
         Button(action: { if enabled { action() } }) {
@@ -164,16 +164,15 @@ struct BigButton: View {
             .glass(26, on: enabled, strong: true)
             .overlay {
                 if sheen && enabled {
-                    GeometryReader { geo in
-                        LinearGradient(colors: [.white.opacity(0), .white.opacity(0.9), .white.opacity(0)], startPoint: .leading, endPoint: .trailing)
-                            .frame(width: geo.size.width * 0.36)
-                            .offset(x: geo.size.width * sheenX)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                    .allowsHitTesting(false)
-                    .onAppear {
-                        withAnimation(.easeOut(duration: 1.7).delay(3.5).repeatForever(autoreverses: false)) { sheenX = 2.4 }
-                    }
+                    // A moving gradient (not an offset view), so the button's frame never grows.
+                    LinearGradient(colors: [.white.opacity(0), .white.opacity(0.9), .white.opacity(0)],
+                                   startPoint: UnitPoint(x: sheenX, y: 0.5), endPoint: UnitPoint(x: sheenX + 0.36, y: 0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                        .onAppear {
+                            withAnimation(.easeOut(duration: 1.7).delay(3.5).repeatForever(autoreverses: false)) { sheenX = 1.4 }
+                        }
                 }
             }
         }

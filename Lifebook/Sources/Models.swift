@@ -49,7 +49,6 @@ struct Shift: Codable, Identifiable, Hashable {
     var caregiverId: UUID
     var start: Date
     var plannedEnd: Date
-    var handoffTo: UUID?
     var closedAt: Date?
     var entries: [String: Entry] = [:]
     /// Set when the caregiver started without the previous caregiver's notes.

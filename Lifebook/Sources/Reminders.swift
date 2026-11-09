@@ -13,7 +13,7 @@ enum Reminders {
         (0..<6).map { "\(shiftId.uuidString)-\($0)" }
     }
 
-    static func schedule(for shift: Shift, kidName: String, targetName: String, now: Date) {
+    static func schedule(for shift: Shift, kidName: String, now: Date) {
         cancel(shiftId: shift.id)
         let center = UNUserNotificationCenter.current()
         let ids = ids(for: shift.id)
@@ -22,16 +22,16 @@ enum Reminders {
         if shift.isOpen {
             plan.append((shift.plannedEnd.addingTimeInterval(-15 * 60),
                          "15 minutes left",
-                         "Log \(kidName)'s points so \(targetName) knows what happened."))
+                         "Log \(kidName)'s points so the next caregiver knows what happened."))
             plan.append((shift.plannedEnd,
                          "Time to hand off",
-                         "Close out and send your notes to \(targetName)."))
+                         "Close out and AirDrop or text your notes to whoever's next."))
         }
         let base = shift.isOpen ? shift.plannedEnd : (shift.closedAt ?? now)
         for i in 1...4 {
             plan.append((base.addingTimeInterval(TimeInterval(i * 15 * 60)),
-                         "\(targetName) is waiting on you",
-                         "\(targetName) can't start until your notes reach their phone. AirDrop or text the Lifebook file."))
+                         "Your notes haven't been sent",
+                         "The next caregiver can't start until your notes reach their phone. AirDrop or text the Lifebook file."))
         }
 
         for (i, item) in plan.enumerated() where i < ids.count {

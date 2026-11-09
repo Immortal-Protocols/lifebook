@@ -9,10 +9,10 @@ final class RulesTests: XCTestCase {
 
     let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func shift(_ who: Member, to: Member?, closed: Bool, offsetHours: Double = 0, entries: [String: Entry] = [:]) -> Shift {
+    func shift(_ who: Member, closed: Bool, offsetHours: Double = 0, entries: [String: Entry] = [:]) -> Shift {
         let start = t0.addingTimeInterval(offsetHours * 3600)
         return Shift(caregiverId: who.id, start: start, plannedEnd: start.addingTimeInterval(7200),
-                     handoffTo: to?.id, closedAt: closed ? start.addingTimeInterval(7000) : nil, entries: entries, updatedAt: start)
+                     closedAt: closed ? start.addingTimeInterval(7000) : nil, entries: entries, updatedAt: start)
     }
 
     func testCaregiverWaitsForParentsAtDayStart() {
@@ -21,47 +21,47 @@ final class RulesTests: XCTestCase {
 
     func testParentsAreNeverBlocked() {
         var day = Day(id: "d")
-        day.shifts = [shift(ana, to: deb, closed: true)]
+        day.shifts = [shift(ana, closed: true)]
         XCTAssertEqual(Rules.gate(day: day, me: priya, family: family), .ready)
         XCTAssertEqual(Rules.gate(day: nil, me: priya, family: family), .ready)
     }
 
-    func testHandedOffToMeIsReady() {
+    func testReadyOnceAnyoneElsesNotesArrive() {
+        // No "who's next": whoever has today's latest closed notes on their phone can start.
         var day = Day(id: "d")
-        day.shifts = [shift(priya, to: ana, closed: true), shift(ana, to: deb, closed: true, offsetHours: 2)]
+        day.shifts = [shift(priya, closed: true)]
+        XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .ready)
+        day.shifts.append(shift(ana, closed: true, offsetHours: 2))
         XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .ready)
     }
 
-    func testBlockedWhenPreviousCaregiverHasntHandedOff() {
-        // Priya handed off to Ana; Ana's notes never reached Deb's phone.
-        var day = Day(id: "d")
-        day.shifts = [shift(priya, to: ana, closed: true)]
-        XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .waitingOn(memberId: ana.id, kind: .notesFrom))
+    func testCaregiverWithNoFamilyParentIsNotStuck() {
+        let solo = Family(kidName: "Nora", points: ["Meds"], members: [deb])
+        XCTAssertEqual(Rules.gate(day: nil, me: deb, family: solo), .ready)
     }
 
     func testBlockedByKnownOpenSession() {
         var day = Day(id: "d")
-        day.shifts = [shift(ana, to: deb, closed: false)]
+        day.shifts = [shift(ana, closed: false)]
         XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .waitingOn(memberId: ana.id, kind: .openSession))
     }
 
     func testResumeOwnOpenSession() {
         var day = Day(id: "d")
-        let mine = shift(deb, to: priya, closed: false)
-        day.shifts = [shift(ana, to: deb, closed: true), mine]
+        let mine = shift(deb, closed: false)
+        day.shifts = [shift(ana, closed: true), mine]
         XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .resume(shiftId: mine.id))
     }
 
     func testStartingWithoutNotesUnblocks() {
         var day = Day(id: "d")
-        var mine = shift(deb, to: priya, closed: true, offsetHours: 3)
-        mine.startedWithoutHandoffFrom = ana.id
-        day.shifts = [shift(priya, to: ana, closed: true), mine]
+        let mine = shift(deb, closed: true, offsetHours: 3)
+        day.shifts = [shift(ana, closed: false), mine]
         XCTAssertEqual(Rules.gate(day: day, me: deb, family: family), .ready)
     }
 
     func testCompletenessRequiresNoteForConcern() {
-        var s = shift(ana, to: deb, closed: false)
+        var s = shift(ana, closed: false)
         s.entries = ["Meds": Entry(mark: .ok), "BM": Entry(mark: .concern), "Nap": Entry(mark: .ok)]
         XCTAssertFalse(s.isComplete(points: family.points))
         s.entries["BM"]?.note = "Hard, once since 8am"
@@ -73,19 +73,14 @@ final class RulesTests: XCTestCase {
     func testFlagsAndLatest() {
         var day = Day(id: "d")
         day.shifts = [
-            shift(priya, to: ana, closed: true, entries: ["BM": Entry(mark: .ok)]),
-            shift(ana, to: deb, closed: true, offsetHours: 2, entries: ["BM": Entry(mark: .concern, note: "uncomfortable")]),
+            shift(priya, closed: true, entries: ["BM": Entry(mark: .ok)]),
+            shift(ana, closed: true, offsetHours: 2, entries: ["BM": Entry(mark: .concern, note: "uncomfortable")]),
         ]
         let flags = Rules.flags(day: day, family: family)
         XCTAssertEqual(flags.count, 1)
         XCTAssertEqual(flags.first?.by?.id, ana.id)
         XCTAssertEqual(Rules.latest(point: "BM", day: day)?.mark, .concern)
         XCTAssertNil(Rules.latest(point: "Nap", day: day))
-    }
-
-    func testDefaultTargetPrefersParentForCaregivers() {
-        XCTAssertEqual(Rules.defaultTarget(me: deb, family: family), priya.id)
-        XCTAssertEqual(Rules.defaultTarget(me: priya, family: family), ana.id)
     }
 }
 
@@ -116,12 +111,12 @@ final class MergeTests: XCTestCase {
 
     func testShiftsUnionAndClosedWins() {
         let t = Date()
-        let open = Shift(caregiverId: ana.id, start: t, plannedEnd: t, handoffTo: priya.id, closedAt: nil, updatedAt: t.addingTimeInterval(100))
+        let open = Shift(caregiverId: ana.id, start: t, plannedEnd: t, closedAt: nil, updatedAt: t.addingTimeInterval(100))
         var closed = open
         closed.closedAt = t
         closed.updatedAt = t
         closed.entries = ["Meds": Entry(mark: .ok)]
-        let other = Shift(caregiverId: priya.id, start: t.addingTimeInterval(-3600), plannedEnd: t, handoffTo: ana.id, closedAt: t)
+        let other = Shift(caregiverId: priya.id, start: t.addingTimeInterval(-3600), plannedEnd: t, closedAt: t)
 
         let local = LocalState(family: family, days: ["d": Day(id: "d", shifts: [open])], meId: priya.id)
         let file = LifebookFile(family: family, days: [Day(id: "d", shifts: [closed, other], nudges: [Nudge(at: t, by: priya.id, to: ana.id)])])
@@ -151,13 +146,19 @@ final class MergeTests: XCTestCase {
         XCTAssertEqual(state2.family?.points, ["Meds", "Nap"])
     }
 
-    func testRemovedMemberLosesIdentity() {
-        var newer = family
-        newer.members = [priya]
-        newer.updatedAt = family.updatedAt.addingTimeInterval(60)
-        let local = LocalState(family: family, days: [:], meId: ana.id)
-        let (state, _) = Merge.apply(LifebookFile(family: newer, days: []), to: local)
-        XCTAssertNil(state.meId)
+    func testMembersAreUnionedEvenWhenOlderFileArrives() {
+        // Deb joined on her own phone; her handoff file reaches Priya, whose family record is newer.
+        let deb = Member(name: "Deb K.", role: "Caregiver", isParent: false)
+        var debsCopy = family
+        debsCopy.members.append(deb)
+        var priyasCopy = family
+        priyasCopy.points = ["Meds", "Nap"]
+        priyasCopy.updatedAt = family.updatedAt.addingTimeInterval(60)
+        let local = LocalState(family: priyasCopy, days: [:], meId: priya.id)
+        let (state, _) = Merge.apply(LifebookFile(family: debsCopy, days: [], sentBy: deb.id), to: local)
+        XCTAssertEqual(state.family?.points, ["Meds", "Nap"])
+        XCTAssertEqual(state.family?.members.map(\.name), ["Priya", "Ana R.", "Deb K."])
+        XCTAssertEqual(state.meId, priya.id)
     }
 }
 
@@ -184,7 +185,7 @@ final class CodecTests: XCTestCase {
         let a = Store(fileURL: url)
         a.loadDemo(asMemberNamed: "Deb K.")
         XCTAssertEqual(a.gate, .ready)
-        a.startSession(hours: 4, handoffTo: a.family!.parents[0].id)
+        a.startSession(hours: 4)
         a.setMark("Meds", .ok)
         a.setMark("BM", .concern)
         a.setNote("BM", "Still uncomfortable after dinner")
@@ -192,7 +193,7 @@ final class CodecTests: XCTestCase {
 
         let b = Store(fileURL: url)
         XCTAssertEqual(b.myOpenShift?.entries["BM"]?.note, "Still uncomfortable after dinner")
-        XCTAssertNotNil(b.closeSession(handoffTo: b.family!.parents[0].id))
+        XCTAssertNotNil(b.closeSession())
         XCTAssertNil(b.myOpenShift)
 
         // The exported file brings Priya's phone up to date.
@@ -203,5 +204,38 @@ final class CodecTests: XCTestCase {
         XCTAssertNil(priyaPhone.me) // asks who they are
         priyaPhone.setMe(priyaPhone.family!.parents[0].id)
         XCTAssertEqual(Rules.flags(day: priyaPhone.today, family: priyaPhone.family!).count, 2)
+    }
+
+    func testNewPhoneJoinsWithJustAName() {
+        let parent = Store(fileURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json"))
+        parent.createFamily(kidName: "Nora", points: ["Meds"], me: Member(name: "Priya", role: "Mom · parent", isParent: true))
+        let file = parent.makeFile()!
+
+        let sam = Store(fileURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json"))
+        sam.importFile(at: file)
+        XCTAssertNil(sam.me)
+        sam.join(name: "  Sam ", isParent: false)
+        XCTAssertEqual(sam.me?.name, "Sam")
+        XCTAssertEqual(sam.family?.members.count, 2)
+        // Priya hasn't started today, so Sam waits on her.
+        XCTAssertEqual(sam.gate, .waitingOn(memberId: parent.me!.id, kind: .dayStart))
+
+        // Same name again (e.g. reinstall) reuses the existing person.
+        sam.setMe(nil)
+        sam.join(name: "sam", isParent: false)
+        XCTAssertEqual(sam.family?.members.count, 2)
+
+        // Sam's handoff teaches Priya's phone who Sam is.
+        parent.startSession(hours: 2)
+        parent.setMark("Meds", .ok)
+        _ = parent.closeSession()
+        sam.importFile(at: parent.makeFile()!)
+        XCTAssertEqual(sam.gate, .ready)
+        sam.startSession(hours: 2)
+        sam.setMark("Meds", .ok)
+        _ = sam.closeSession()
+        parent.importFile(at: sam.makeFile()!)
+        XCTAssertEqual(parent.family?.members.map(\.name), ["Priya", "Sam"])
+        XCTAssertEqual(parent.today?.shifts.count, 2)
     }
 }

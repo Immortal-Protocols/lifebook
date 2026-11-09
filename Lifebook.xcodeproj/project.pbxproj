@@ -16,9 +16,11 @@
 		A9A4431C0C43696C670F92F5 /* LifebookApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F68BF489FA7C33BA8EDE39AC /* LifebookApp.swift */; };
 		B0EE3308BF0F5BD1A0381D73 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DF817621D675F8A327119D3 /* Theme.swift */; };
 		B18E1E3ED9BF59386009F63C /* DigestAndTeam.swift in Sources */ = {isa = PBXBuildFile; fileRef = C105935E5CB9D943877897AA /* DigestAndTeam.swift */; };
+		BD15D8F1B1C7E5DF151F6873 /* LifebookUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C0600FBD584E6C4F2273ED4 /* LifebookUITests.swift */; };
 		C1FC72AA1D331ACF86B73E7D /* Share.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EEE7BFE6A19D5056404DB19 /* Share.swift */; };
 		C8133031861EA8681E33D08F /* BricolageGrotesque.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B21E60B39004E71AC1A10302 /* BricolageGrotesque.ttf */; };
 		CA628AB682F8688D1FF743A4 /* InstrumentSerif-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 65305BE80D8575F1F16290A8 /* InstrumentSerif-Regular.ttf */; };
+		CBF9BB5EDD7F78342B289617 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A25780E81BEE0A1CA1DECCCB /* Assets.xcassets */; };
 		CF15443EE7C914D45E716FA8 /* Reminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5195162BF692200C4BD590FB /* Reminders.swift */; };
 		D2128F9C9773348F4C83FF46 /* OnboardingFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A3CDC6CD45437EEAC8D8FB /* OnboardingFlow.swift */; };
 		DCA4A5F4E92EEBE99E0F592D /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2297ECD012A681AE6DAE7DB /* Store.swift */; };
@@ -27,6 +29,13 @@
 
 /* Begin PBXContainerItemProxy section */
 		A989EBD446D4F021B1CE98E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 39E09E5C91EAA34062141C50 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 358351C77191F34DC169D14B;
+			remoteInfo = Lifebook;
+		};
+		CC16A552EC920A946C813AB0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 39E09E5C91EAA34062141C50 /* Project object */;
 			proxyType = 1;
@@ -44,8 +53,10 @@
 		5EEE7BFE6A19D5056404DB19 /* Share.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Share.swift; sourceTree = "<group>"; };
 		6406A203C7E8600824AE85CC /* DayViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayViews.swift; sourceTree = "<group>"; };
 		65305BE80D8575F1F16290A8 /* InstrumentSerif-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "InstrumentSerif-Regular.ttf"; sourceTree = "<group>"; };
+		7C0600FBD584E6C4F2273ED4 /* LifebookUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifebookUITests.swift; sourceTree = "<group>"; };
 		97E5C5A166CFCD0119877281 /* LifebookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifebookTests.swift; sourceTree = "<group>"; };
 		A2297ECD012A681AE6DAE7DB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		A25780E81BEE0A1CA1DECCCB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B21E60B39004E71AC1A10302 /* BricolageGrotesque.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BricolageGrotesque.ttf; sourceTree = "<group>"; };
 		BF79A310CDCA03FC82C6D726 /* LifebookTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LifebookTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF9801B2A8B07710FBBCB21B /* Lifebook.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Lifebook.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -53,6 +64,7 @@
 		D488669B2BBFB0F346BEB6D3 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		D74EB9705DA539E4043318EF /* SessionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViews.swift; sourceTree = "<group>"; };
 		E2A3CDC6CD45437EEAC8D8FB /* OnboardingFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlow.swift; sourceTree = "<group>"; };
+		E7AF53FD13745070BB5741D0 /* LifebookUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LifebookUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F68BF489FA7C33BA8EDE39AC /* LifebookApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifebookApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -74,6 +86,7 @@
 		4C75C5A3BE7F960EF35FEE4C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A25780E81BEE0A1CA1DECCCB /* Assets.xcassets */,
 				7311894AE06B4C8FEF9CA9E6 /* Fonts */,
 			);
 			path = Resources;
@@ -107,6 +120,7 @@
 			children = (
 				E19E35DC31DF8E62FC7662DB /* Lifebook */,
 				EDEFBE84EA638BD81A572FEF /* LifebookTests */,
+				DA9A5D294B710929BDFB90CD /* LifebookUITests */,
 				C16B3F352AFE4C86F86175EB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -116,8 +130,17 @@
 			children = (
 				BF9801B2A8B07710FBBCB21B /* Lifebook.app */,
 				BF79A310CDCA03FC82C6D726 /* LifebookTests.xctest */,
+				E7AF53FD13745070BB5741D0 /* LifebookUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DA9A5D294B710929BDFB90CD /* LifebookUITests */ = {
+			isa = PBXGroup;
+			children = (
+				7C0600FBD584E6C4F2273ED4 /* LifebookUITests.swift */,
+			);
+			path = LifebookUITests;
 			sourceTree = "<group>";
 		};
 		E19E35DC31DF8E62FC7662DB /* Lifebook */ = {
@@ -176,6 +199,24 @@
 			productReference = BF79A310CDCA03FC82C6D726 /* LifebookTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		E3E824B3E4E4053F3B4C806E /* LifebookUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 806CAE39FA9F0D17AD79EA3A /* Build configuration list for PBXNativeTarget "LifebookUITests" */;
+			buildPhases = (
+				716B306C187A5FDAD9AEC39F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B9481F19BD2C1435A21F9DE7 /* PBXTargetDependency */,
+			);
+			name = LifebookUITests;
+			packageProductDependencies = (
+			);
+			productName = LifebookUITests;
+			productReference = E7AF53FD13745070BB5741D0 /* LifebookUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -186,7 +227,15 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					358351C77191F34DC169D14B = {
+						DevelopmentTeam = 3UGCLFLDJ6;
 						ProvisioningStyle = Automatic;
+					};
+					E24BBF7D504E410228C0BD22 = {
+						DevelopmentTeam = 3UGCLFLDJ6;
+					};
+					E3E824B3E4E4053F3B4C806E = {
+						DevelopmentTeam = 3UGCLFLDJ6;
+						TestTargetID = 358351C77191F34DC169D14B;
 					};
 				};
 			};
@@ -206,6 +255,7 @@
 			targets = (
 				358351C77191F34DC169D14B /* Lifebook */,
 				E24BBF7D504E410228C0BD22 /* LifebookTests */,
+				E3E824B3E4E4053F3B4C806E /* LifebookUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -215,6 +265,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CBF9BB5EDD7F78342B289617 /* Assets.xcassets in Resources */,
 				C8133031861EA8681E33D08F /* BricolageGrotesque.ttf in Resources */,
 				CA628AB682F8688D1FF743A4 /* InstrumentSerif-Regular.ttf in Resources */,
 			);
@@ -228,6 +279,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				79B69AEC9196B876F44247D5 /* LifebookTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		716B306C187A5FDAD9AEC39F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD15D8F1B1C7E5DF151F6873 /* LifebookUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,6 +317,11 @@
 			isa = PBXTargetDependency;
 			target = 358351C77191F34DC169D14B /* Lifebook */;
 			targetProxy = A989EBD446D4F021B1CE98E5 /* PBXContainerItemProxy */;
+		};
+		B9481F19BD2C1435A21F9DE7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 358351C77191F34DC169D14B /* Lifebook */;
+			targetProxy = CC16A552EC920A946C813AB0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -297,6 +361,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3UGCLFLDJ6;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -317,6 +382,40 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
+		};
+		4F2F8A88631C272BBC09AEB6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lifebook.LifebookUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lifebook;
+			};
+			name = Release;
+		};
+		76686A65E7A17CD3AFF96597 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lifebook.LifebookUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Lifebook;
+			};
+			name = Debug;
 		};
 		80D1A1555DE24F67219CD659 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -341,7 +440,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Lifebook/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lifebook;
@@ -364,7 +463,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Lifebook/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Lifebook;
@@ -416,6 +515,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3UGCLFLDJ6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -487,6 +587,15 @@
 			buildConfigurations = (
 				B9C6A54B2B1AB60A59931EEE /* Debug */,
 				0F27BFBF046059CB6FF431A7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		806CAE39FA9F0D17AD79EA3A /* Build configuration list for PBXNativeTarget "LifebookUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76686A65E7A17CD3AFF96597 /* Debug */,
+				4F2F8A88631C272BBC09AEB6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
