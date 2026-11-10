@@ -43,6 +43,18 @@ final class LifebookUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Sam"].waitForExistence(timeout: 2))
     }
 
+    func testPlusOneAndUndo() {
+        let app = launch(["-demo", "Deb K.", "-route", "log"])
+        let plus = app.buttons["tally-BM"]
+        XCTAssertTrue(plus.waitForExistence(timeout: 5))
+        plus.tap()
+        plus.tap()
+        let count = app.staticTexts["tallyCount-BM"]
+        XCTAssertTrue(count.label.hasPrefix("2× this shift"), count.label)
+        app.buttons["untally-BM"].tap()
+        XCTAssertTrue(count.label.hasPrefix("1× this shift"), count.label)
+    }
+
     /// Start → log → close & send, with no "who's next" anywhere.
     func testShiftWithoutPickingWhosNext() {
         let app = launch(["-demo", "Deb K."])

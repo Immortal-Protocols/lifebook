@@ -176,6 +176,34 @@ final class CodecTests: XCTestCase {
         XCTAssertTrue(String(decoding: data, as: UTF8.self).contains("\"format\" : \"lifebook\""))
     }
 
+    func testOldFilesWithoutCountsStillOpen() throws {
+        let json = #"{"mark":"concern","note":"hard","at":"2026-11-08T12:00:00Z"}"#
+        let e = try Codec.decoder.decode(Entry.self, from: Data(json.utf8))
+        XCTAssertEqual(e.note, "hard")
+        XCTAssertEqual(e.times, [])
+    }
+
+    func testPlusOneCountsAndTravels() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        let a = Store(fileURL: url)
+        a.loadDemo(asMemberNamed: "Deb K.")
+        let before = Rules.times(point: "BM", day: a.today).count
+        a.startSession(hours: 2)
+        a.tally("BM")
+        a.tally("BM")
+        a.untally("BM")
+        XCTAssertEqual(a.myOpenShift?.entries["BM"]?.times.count, 1)
+        XCTAssertEqual(a.myOpenShift?.entries["BM"]?.mark, .ok) // +1 logs the point
+        a.setMark("BM", .concern)
+        a.tally("BM")
+        XCTAssertEqual(a.myOpenShift?.entries["BM"]?.mark, .concern) // +1 doesn't clear a concern
+        XCTAssertEqual(Rules.times(point: "BM", day: a.today).count, before + 2)
+
+        let other = Store(fileURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json"))
+        other.importFile(at: a.makeFile()!)
+        XCTAssertEqual(Rules.times(point: "BM", day: other.today).count, before + 2)
+    }
+
     func testRejectsOtherJSON() {
         XCTAssertThrowsError(try Codec.decode(Data(#"{"hello":"world"}"#.utf8)))
     }

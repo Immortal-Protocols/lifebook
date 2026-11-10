@@ -197,6 +197,25 @@ final class Store {
         }
     }
 
+    /// "+1": it happened just now. Counts as logging the point (All good) unless it's already marked.
+    func tally(_ point: String) {
+        guard let open = myOpenShift else { return }
+        updateShift(open.id) { s in
+            var e = s.entries[point] ?? Entry(mark: .ok)
+            e.times.append(now())
+            e.at = now()
+            s.entries[point] = e
+        }
+    }
+
+    /// Undo the last "+1" this shift.
+    func untally(_ point: String) {
+        guard let open = myOpenShift, open.entries[point]?.times.isEmpty == false else { return }
+        updateShift(open.id) { s in
+            s.entries[point]?.times.removeLast()
+        }
+    }
+
     func setNote(_ point: String, _ note: String) {
         guard let open = myOpenShift else { return }
         updateShift(open.id) { s in
@@ -318,11 +337,11 @@ final class Store {
         let base = cal.startOfDay(for: now())
         func at(_ h: Int, _ m: Int) -> Date { base.addingTimeInterval(TimeInterval(h * 3600 + m * 60)) }
         let s1 = Shift(caregiverId: priya.id, start: at(6, 0), plannedEnd: at(8, 0), closedAt: at(8, 10),
-                       entries: ["Meds": Entry(mark: .ok, at: at(7, 0)), "BM": Entry(mark: .ok, at: at(7, 30)), "Nap": Entry(mark: .ok, at: at(8, 0))])
+                       entries: ["Meds": Entry(mark: .ok, at: at(7, 0), times: [at(7, 0)]), "BM": Entry(mark: .ok, at: at(7, 30), times: [at(7, 30)]), "Nap": Entry(mark: .ok, at: at(8, 0))])
         let s2 = Shift(caregiverId: ana.id, start: at(8, 10), plannedEnd: at(14, 30), closedAt: at(14, 35),
-                       entries: ["Meds": Entry(mark: .ok, at: at(12, 0)),
-                                 "BM": Entry(mark: .concern, note: "Only once since 8am and she seemed uncomfortable around noon. Gave extra water. Worth watching this afternoon.", at: at(12, 24)),
-                                 "Nap": Entry(mark: .ok, at: at(13, 30))])
+                       entries: ["Meds": Entry(mark: .ok, at: at(12, 0), times: [at(12, 0)]),
+                                 "BM": Entry(mark: .concern, note: "Only once since 8am and she seemed uncomfortable around noon. Gave extra water. Worth watching this afternoon.", at: at(12, 24), times: [at(12, 24)]),
+                                 "Nap": Entry(mark: .ok, at: at(13, 30), times: [at(12, 45)])])
         var day = Day(id: DayKey.of(now()))
         day.shifts = handoffChain ? [s1, s2] : [s1]
         let meId = fam.members.first { $0.name == name }?.id

@@ -42,6 +42,24 @@ struct Entry: Codable, Hashable {
     var mark: Mark
     var note: String = ""
     var at: Date = Date()
+    /// Each "+1" tap: when the thing happened (a BM, a nap, a dose…).
+    var times: [Date] = []
+
+    init(mark: Mark, note: String = "", at: Date = Date(), times: [Date] = []) {
+        self.mark = mark
+        self.note = note
+        self.at = at
+        self.times = times
+    }
+
+    // Files from builds before "+1" have no `times`.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mark = try c.decode(Mark.self, forKey: .mark)
+        note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+        at = try c.decodeIfPresent(Date.self, forKey: .at) ?? Date()
+        times = try c.decodeIfPresent([Date].self, forKey: .times) ?? []
+    }
 }
 
 struct Shift: Codable, Identifiable, Hashable {
@@ -155,6 +173,8 @@ enum Fmt {
 struct CatalogPoint: Hashable {
     let name: String
     let symbol: String
+    /// Gets a "+1" button: something that happens a number of times.
+    var countable: Bool = true
 }
 
 enum Catalog {
@@ -163,12 +183,16 @@ enum Catalog {
         .init(name: "BM", symbol: "drop"),
         .init(name: "Nap", symbol: "moon"),
         .init(name: "Meals", symbol: "fork.knife"),
-        .init(name: "Mood", symbol: "face.smiling"),
+        .init(name: "Mood", symbol: "face.smiling", countable: false),
         .init(name: "Seizure activity", symbol: "waveform.path.ecg"),
     ]
 
     static func symbol(for point: String) -> String {
         all.first { $0.name == point }?.symbol ?? "circle.dashed"
+    }
+
+    static func isCountable(_ point: String) -> Bool {
+        all.first { $0.name == point }?.countable ?? true
     }
 
     static let defaultPoints = ["Meds", "BM", "Nap"]

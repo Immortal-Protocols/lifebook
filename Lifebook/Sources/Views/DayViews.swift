@@ -98,6 +98,14 @@ struct SummaryGrid: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(concern ? Pearl.crimson : Pearl.muted())
                         .padding(.top, 2)
+                    let times = Rules.times(point: p, day: day)
+                    if let last = times.last {
+                        Text("\(times.count)× · last \(Fmt.shortTime(last))")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Pearl.muted(0.55))
+                            .padding(.top, 2)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 4)

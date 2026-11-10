@@ -117,6 +117,11 @@ struct PointRow: View {
                 .frame(width: 206)
                 .glass(18)
             }
+            if Catalog.isCountable(point) {
+                TallyRow(point: point, times: entry?.times ?? [])
+                    .padding(.top, 12)
+                    .padding(.leading, 40)
+            }
             if mark == .concern {
                 NoteCard {
                     TextField("What did you see? The next caregiver reads this first.", text: $note, axis: .vertical)
@@ -151,6 +156,54 @@ struct PointRow: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressStyle())
+    }
+}
+
+/// "+1 each time it happens", with an undo for a mis-tap.
+struct TallyRow: View {
+    @Environment(Store.self) private var store
+    let point: String
+    let times: [Date]
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button { store.tally(point) } label: {
+                Text("+1")
+                    .font(.display(18)).tracking(-0.3)
+                    .foregroundStyle(Pearl.ink)
+                    .frame(width: 58, height: 38)
+                    .glass(14, strong: true)
+            }
+            .buttonStyle(PressStyle())
+            .accessibilityLabel("\(point) happened, add one")
+            .accessibilityIdentifier("tally-\(point)")
+
+            if !times.isEmpty {
+                Button { store.untally(point) } label: {
+                    Image(systemName: "minus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Pearl.muted(0.6))
+                        .frame(width: 38, height: 38)
+                        .glass(14, on: false)
+                }
+                .buttonStyle(PressStyle())
+                .accessibilityLabel("Undo last \(point)")
+                .accessibilityIdentifier("untally-\(point)")
+            }
+
+            Text(summary)
+                .font(.system(size: 15, weight: times.isEmpty ? .regular : .semibold))
+                .foregroundStyle(times.isEmpty ? Pearl.muted(0.5) : Pearl.ink.opacity(0.75))
+                .lineLimit(1).minimumScaleFactor(0.8)
+                .accessibilityIdentifier("tallyCount-\(point)")
+            Spacer(minLength: 0)
+        }
+        .animation(.easeOut(duration: 0.15), value: times.count)
+    }
+
+    private var summary: String {
+        guard let last = times.last else { return "Tap each time it happens" }
+        return "\(times.count)× this shift · last \(Fmt.time(last))"
     }
 }
 

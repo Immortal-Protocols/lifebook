@@ -78,7 +78,17 @@ struct DigestView: View {
                         Text("\(Fmt.shortTime(s.start))–\(s.closedAt.map(Fmt.shortTime) ?? "now")")
                             .font(.system(size: 13, weight: .bold)).tracking(0.8).foregroundStyle(Pearl.muted())
                             .frame(width: 96, alignment: .leading)
-                        Text(family.member(s.caregiverId)?.name ?? "Someone").font(.system(size: 18, weight: .semibold))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(family.member(s.caregiverId)?.name ?? "Someone").font(.system(size: 18, weight: .semibold))
+                            let counts = family.points.compactMap { p -> String? in
+                                guard let n = s.entries[p]?.times.count, n > 0 else { return nil }
+                                return "\(p) \(n)×"
+                            }
+                            if !counts.isEmpty {
+                                Text(counts.joined(separator: " · "))
+                                    .font(.system(size: 14)).foregroundStyle(Pearl.muted(0.55))
+                            }
+                        }
                         Spacer()
                         Text(s.isOpen ? "in progress" : bad > 0 ? "\(bad) flag\(bad == 1 ? "" : "s")" : "all normal")
                             .font(.system(size: 15, weight: .semibold))

@@ -56,6 +56,11 @@ enum Rules {
         return out
     }
 
+    /// Every "+1" for a point today, across all shifts on this phone, oldest first.
+    static func times(point: String, day: Day?) -> [Date] {
+        (day?.shifts ?? []).flatMap { $0.entries[point]?.times ?? [] }.sorted()
+    }
+
     /// The most recent mark for each point today.
     static func latest(point: String, day: Day?) -> Entry? {
         guard let day else { return nil }
